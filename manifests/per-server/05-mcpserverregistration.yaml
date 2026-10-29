@@ -1,0 +1,18 @@
+# Register the external MCP server with the gateway.
+# Ref: RHCL 1.5 "Register MCP servers and create policies" section 2.6
+apiVersion: mcp.kuadrant.io/v1        # v1 in RHCL 1.5 (v1alpha1 in 1.4)
+kind: MCPServerRegistration
+metadata:
+  name: ${MCP_SERVER_NAME}
+  namespace: ${MCP_SERVER_NAMESPACE}   # same namespace as the HTTPRoute unless you use a ReferenceGrant
+spec:
+  prefix: ${MCP_TOOL_PREFIX}           # prepended to every tool name; letters/digits/_ only
+  path: ${EXTERNAL_MCP_PATH}           # the server's MCP endpoint path; defaults to /mcp
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: ${MCP_SERVER_NAME}           # the HTTPRoute from 03
+    namespace: ${MCP_SERVER_NAMESPACE}
+  credentialRef:
+    name: ${MCP_SERVER_NAME}-broker-credential  # the Secret from 04
+    key: token                                  # key inside the Secret (default: token)
