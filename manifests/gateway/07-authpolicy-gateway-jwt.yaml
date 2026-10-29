@@ -1,0 +1,31 @@
+# Validate the user's IdP token at the gateway's public listener so only
+# authenticated tokens are ever forwarded upstream. Apply ONCE per gateway,
+# not once per server.
+# Requires a Kuadrant CR in the gateway namespace. For MCP client OAuth
+# discovery, also set MCPGatewayExtension spec.oauthProtectedResource.
+# Ref: RHCL 1.5 "Secure your traffic" chapter 4
+apiVersion: kuadrant.io/v1
+kind: AuthPolicy
+metadata:
+  name: ${MCP_GATEWAY_NAME}-jwt
+  namespace: ${MCP_GATEWAY_NAMESPACE}  # namespace of the MCP Gateway object
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    name: ${MCP_GATEWAY_NAME}
+    sectionName: ${MCP_GATEWAY_PUBLIC_LISTENER}  # the public listener clients connect to (often "mcp")
+  defaults:
+    when:
+      - predicate: "!request.path.contains('/.well-known')"  # keep OAuth discovery public
+    rules:
+      authentication:
+        "idp-jwt":
+          jwt:
+            issuerUrl: ${OIDC_ISSUER_URL}  # issuer of the user tokens the external servers also trust
+      response:
+        unauthenticated:
+          code: 401
+          headers:
+            "WWW-Authenticate":
+              value: Bearer resource_metadata=https://${MCP_PUBLIC_HOSTNAME}/.well-known/oauth-protected-resource/mcp
