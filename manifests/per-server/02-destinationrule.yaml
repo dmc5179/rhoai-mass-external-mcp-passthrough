@@ -1,0 +1,14 @@
+# TLS origination: Envoy speaks HTTPS to the external host.
+# Ref: RHCL 1.5 "Register MCP servers and create policies" section 2.2
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: ${MCP_SERVER_NAME}
+  namespace: ${MCP_SERVER_NAMESPACE}   # same namespace as the ServiceEntry
+spec:
+  host: ${EXTERNAL_MCP_HOST}           # must match ServiceEntry spec.hosts
+  trafficPolicy:
+    tls:
+      mode: SIMPLE                     # one-way TLS; MUTUAL if the server requires a client cert
+      sni: ${EXTERNAL_MCP_HOST}        # SNI / cert name the server presents
+      # Private CA? Add: credentialName: <secret with ca.crt>

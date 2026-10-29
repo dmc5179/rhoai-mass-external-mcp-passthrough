@@ -1,0 +1,4 @@
+# Filled-in env files hold credentials
+*.env
+!env.example
+rendered/

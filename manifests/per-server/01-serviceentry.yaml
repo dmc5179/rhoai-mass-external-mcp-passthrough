@@ -1,0 +1,17 @@
+# Register the external MCP host in the Istio service registry so the
+# gateway's Envoy can reach it. No in-cluster proxy is needed.
+# Ref: RHCL 1.5 "Register MCP servers and create policies" section 2.1
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: ${MCP_SERVER_NAME}             # short DNS-safe name for this server; reused by every object
+  namespace: ${MCP_SERVER_NAMESPACE}   # namespace holding your MCP server objects
+spec:
+  hosts:
+    - ${EXTERNAL_MCP_HOST}             # FQDN of the external MCP server, no scheme or path
+  ports:
+    - number: ${EXTERNAL_MCP_PORT}     # usually 443
+      name: https
+      protocol: HTTPS
+  location: MESH_EXTERNAL              # outside the cluster/mesh
+  resolution: DNS                      # resolve the host above with DNS

@@ -1,0 +1,30 @@
+# Route an internal *.mcp.local hostname to the external host.
+# Ref: RHCL 1.5 "Register MCP servers and create policies" section 2.3
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: ${MCP_SERVER_NAME}
+  namespace: ${MCP_SERVER_NAMESPACE}
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: ${MCP_GATEWAY_NAME}                    # your MCP Gateway object
+      namespace: ${MCP_GATEWAY_NAMESPACE}          # its namespace
+      sectionName: ${MCP_GATEWAY_INTERNAL_LISTENER} # the internal *.mcp.local listener (often "mcps")
+  hostnames:
+    - ${MCP_SERVER_NAME}.mcp.local     # internal-only name; must match the internal listener wildcard
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: ${EXTERNAL_MCP_PATH}  # the server's MCP endpoint path (/mcp, /api/mcp, ...)
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            hostname: ${EXTERNAL_MCP_HOST}  # rewrites Host header to the real external host
+      backendRefs:
+        - group: networking.istio.io
+          kind: Hostname               # points at the ServiceEntry host, not a Service
+          name: ${EXTERNAL_MCP_HOST}   # must match ServiceEntry spec.hosts
+          port: ${EXTERNAL_MCP_PORT}
