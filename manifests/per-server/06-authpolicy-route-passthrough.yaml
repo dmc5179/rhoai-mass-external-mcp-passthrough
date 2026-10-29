@@ -1,0 +1,20 @@
+# On tools/call, forward the user's own Authorization header (an IdP token the
+# external server trusts) to this server only.
+# Ref: RHCL 1.5 "Register MCP servers and create policies" section 2.5
+apiVersion: kuadrant.io/v1
+kind: AuthPolicy
+metadata:
+  name: ${MCP_SERVER_NAME}-passthrough
+  namespace: ${MCP_SERVER_NAMESPACE}   # same namespace as the HTTPRoute
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: ${MCP_SERVER_NAME}           # the HTTPRoute from 03
+  rules:
+    response:
+      success:
+        headers:
+          authorization:
+            plain:
+              expression: 'request.headers["authorization"]'  # copy the incoming user token
